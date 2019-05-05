@@ -109,7 +109,7 @@ export class Coinbase extends Component {
           </h1>
           <h2>DAI</h2>
           <h3>for sale on Coinbase</h3>
-          <h4>before we restore the ${this.priceLimit} peg</h4>
+          <h4>below ${this.priceLimit}</h4>
         </React.Fragment>
         :
         <BounceLoader

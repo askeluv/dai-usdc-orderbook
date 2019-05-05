@@ -1,6 +1,5 @@
 import React from 'react';
 import './App.css';
-
 import Coinbase from './components/Coinbase';
 
 function App() {
