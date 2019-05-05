@@ -30,6 +30,12 @@ body {
   background-color: #333;
 }
 
+@media (max-width: 56.25em) {
+  body {
+    height: 105%;
+  }
+}
+
 body {
   display: -ms-flexbox;
   color: #fff;

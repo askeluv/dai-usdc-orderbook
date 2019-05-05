@@ -136,7 +136,7 @@ export class Coinbase extends Component {
               />
           </FlexibleWidthXYPlot>
           </main>
-          <footer className="mastfoot mt-5">
+          <footer className="mastfoot mt-4">
           <div className="inner">
             <p>Made by <a href="https://twitter.com/ASvanevik">@ASvanevik</a></p>
           </div>
