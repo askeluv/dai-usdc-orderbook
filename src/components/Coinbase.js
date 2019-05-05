@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import Websocket from 'react-websocket';
 import { BounceLoader } from 'react-spinners';
+import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries} from 'react-vis';
 
 export class Coinbase extends Component {
 
@@ -93,6 +94,15 @@ export class Coinbase extends Component {
     )
   }
 
+  reshapeDataForChart = asks => {
+    let cumulativeAmount = 0;
+    let results = asks.map(row => {
+        cumulativeAmount += row[1];
+        return {x: row[0], y: cumulativeAmount};
+    })
+    return results.filter(row => row.x < this.priceLimit);
+  }
+
   hasLoaded() {
     return this.state.volumeUpToLimit !== undefined;
   }
@@ -100,22 +110,43 @@ export class Coinbase extends Component {
   render() {
     return (
       <div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-        <main role="main" className="inner cover">
         
         {this.hasLoaded() ? 
         <React.Fragment>
+          <main role="main" className="inner cover">
           <h1 className="cover-heading">
             {this.formatAsDollars(this.state.volumeUpToLimit)}
           </h1>
           <h2>DAI</h2>
-          <h3>for sale on Coinbase</h3>
-          <h4>below ${this.priceLimit}</h4>
+          <h3 className="mb-4">for sale on Coinbase below ${this.priceLimit}.</h3>
+          <FlexibleWidthXYPlot height={300}>
+            <XAxis
+              style={{
+                line: {stroke: '#FFF'},
+                text: {stroke: 'none', fill: '#FFF'}
+              }}
+              tickValues={[this.state.asks[0][0], 1.0]}
+              tickFormat={v => `$${v}`}
+            />
+            <YAxis
+              hideTicks
+            />
+              <AreaSeries
+                data={this.reshapeDataForChart(this.state.asks)}
+              />
+          </FlexibleWidthXYPlot>
+          </main>
+          <footer className="mastfoot mt-5">
+          <div className="inner">
+            <p>Made by <a href="https://twitter.com/ASvanevik">@ASvanevik</a></p>
+          </div>
+          </footer>
         </React.Fragment>
         :
         <BounceLoader
           loading={!this.hasLoaded()}
           color={'#FFF'}
-          css={{display: 'block', margin: 'auto'}}
+          css={{display: 'block', margin: 'auto', marginTop: '50%'}}
         />
         }
 
@@ -126,8 +157,6 @@ export class Coinbase extends Component {
             this.refWebSocket = Websocket;
           }}
           />
-
-        </main>
       </div>
     )
   }

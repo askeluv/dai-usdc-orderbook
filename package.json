@@ -8,6 +8,7 @@
     "react-dom": "^16.8.6",
     "react-scripts": "3.0.0",
     "react-spinners": "^0.5.4",
+    "react-vis": "^1.11.7",
     "react-websocket": "^2.0.1"
   },
   "scripts": {

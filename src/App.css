@@ -1,22 +1,14 @@
 .cover {
-  margin-top: 200px;
+  margin-top: 20%;
 }
 
 /* https://typecast.com/blog/a-more-modern-scale-for-web-typography */
 
 h1 {
-  font-size: 2em;
+  font-size: 3em;
   /* 2x body copy size = 32px */
   line-height: 1.25;
   /* 45px / 36px */
-}
-
-@media (min-width: 43.75em) {
-  h1 {
-    font-size: 2.5em;
-    /* 2.5x body copy size = 40px */
-    line-height: 1.125;
-  }
 }
 
 @media (min-width: 56.25em) {
