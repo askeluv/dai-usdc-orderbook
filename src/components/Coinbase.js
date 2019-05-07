@@ -3,6 +3,8 @@ import Websocket from 'react-websocket';
 import { BounceLoader } from 'react-spinners';
 import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries} from 'react-vis';
 
+import TitleComponent from './TitleComponent';
+
 export class Coinbase extends Component {
 
   constructor(props) {
@@ -108,15 +110,14 @@ export class Coinbase extends Component {
   }
 
   render() {
+    const dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeUpToLimit) : undefined;
     return (
       <div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
         
         {this.hasLoaded() ? 
         <React.Fragment>
           <main role="main" className="inner cover">
-          <h1 className="cover-heading">
-            {this.formatAsDollars(this.state.volumeUpToLimit)}
-          </h1>
+          <h1 className="cover-heading">{dollarVolume}</h1>
           <h2>DAI</h2>
           <h3 className="mb-4">for sale on Coinbase below ${this.priceLimit}.</h3>
           <FlexibleWidthXYPlot height={300}>
@@ -141,6 +142,7 @@ export class Coinbase extends Component {
             <p>Made by <a href="https://twitter.com/ASvanevik">@ASvanevik</a></p>
           </div>
           </footer>
+          <TitleComponent title={`${dollarVolume} DAI for sale on Coinbase below $${this.priceLimit}.`} />
         </React.Fragment>
         :
         <BounceLoader
