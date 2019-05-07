@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import Websocket from 'react-websocket';
 import { BounceLoader } from 'react-spinners';
-import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries} from 'react-vis';
+import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries, Hint} from 'react-vis';
+import '../../node_modules/react-vis/dist/style.css';
 
 import TitleComponent from './TitleComponent';
 
@@ -41,7 +42,7 @@ export class Coinbase extends Component {
       let price = order[0];
       let amount = order[1];
       if (price < priceLimit) {
-        volume += price * amount;
+        volume += amount;
       }
     })
     return volume;
@@ -124,17 +125,28 @@ export class Coinbase extends Component {
             <XAxis
               style={{
                 line: {stroke: '#FFF'},
-                text: {stroke: 'none', fill: '#FFF'}
+                text: {stroke: 'none', fill: '#FFF', fontSize: '1em'}
               }}
               tickValues={[this.state.asks[0][0], 1.0]}
               tickFormat={v => `$${v}`}
             />
             <YAxis
               hideTicks
+              hideLine
             />
               <AreaSeries
                 data={this.reshapeDataForChart(this.state.asks)}
+                onNearestX={(datapoint, event) => {
+                  this.setState({value: datapoint});
+              }}
               />
+              {this.state.value && 
+              <Hint
+                value={this.state.value}
+              >
+                <p>{this.formatAsDollars(this.state.value.y)}</p>
+              </Hint>
+              }
           </FlexibleWidthXYPlot>
           </main>
           <footer className="mastfoot mt-4">
