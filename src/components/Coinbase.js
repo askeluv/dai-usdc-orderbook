@@ -121,7 +121,10 @@ export class Coinbase extends Component {
           <h1 className="cover-heading">{dollarVolume}</h1>
           <h2>DAI</h2>
           <h3 className="mb-4">for sale on Coinbase below ${this.priceLimit}.</h3>
-          <FlexibleWidthXYPlot height={300}>
+          <FlexibleWidthXYPlot
+            height={300}
+            onMouseLeave={() => this.setState({value: undefined})}
+            >
             <XAxis
               style={{
                 line: {stroke: '#FFF'},
