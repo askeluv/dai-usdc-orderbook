@@ -144,10 +144,8 @@ export class Coinbase extends Component {
               }}
               />
               {this.state.value && 
-              <Hint
-                value={this.state.value}
-              >
-                <p>{this.formatAsDollars(this.state.value.y)}</p>
+              <Hint value={this.state.value}>
+                <p>{this.formatAsDollars(this.state.value.y) + ' ≤ $' + this.state.value.x}</p>
               </Hint>
               }
           </FlexibleWidthXYPlot>
