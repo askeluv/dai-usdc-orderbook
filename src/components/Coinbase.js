@@ -36,9 +36,26 @@ export class Coinbase extends Component {
     return result;
   }
 
-  sumUpToPriceLimit = (orders, priceLimit) => {
+  replaceBids = (bids, price, newAmount) => {
+    let madeUpdate = false;
+    let result = bids.map(ask => {
+      if (ask[0] === price) {
+        madeUpdate = true;
+        return [price, newAmount]
+      } else {
+        return ask;
+      }
+    });
+    if (!madeUpdate) {
+      result.unshift([price, newAmount]);
+      result = result.sort((a, b) => a[0] < b[0] ? 1 : -1);
+    }
+    return result;
+  }
+
+  sumUpToPriceLimit = (asks, priceLimit) => {
     let volume = 0;
-    orders.forEach(order => {
+    asks.forEach(order => {
       let price = order[0];
       let amount = order[1];
       if (price < priceLimit) {
@@ -48,28 +65,45 @@ export class Coinbase extends Component {
     return volume;
   }
 
-  parseSnapshot = asks => {
-    let newVol = this.sumUpToPriceLimit(asks, this.priceLimit);
+  sumDownToPriceLimit = (bids, priceLimit) => {
+    let volume = 0;
+    bids.forEach(order => {
+      let price = order[0];
+      let amount = order[1];
+      if (price > priceLimit) {
+        volume += amount;
+      }
+    })
+    return volume;
+  }
+
+  parseSnapshot = (asks, bids) => {
     this.setState({
-      volumeUpToLimit: newVol,
-      asks: asks
+      volumeUpToLimit: this.sumUpToPriceLimit(asks, this.priceLimit),
+      volumeDownToLimit: this.sumDownToPriceLimit(bids, this.priceLimit),
+      asks: asks,
+      bids: bids
     })
   }
 
   reportUpdate = data => {
     let newAsks = this.state.asks;
+    let newBids = this.state.bids;
     data.changes.forEach(change => {
       let direction = change[0];
       let price = parseFloat(change[1]);
       let amount = parseFloat(change[2]);
       if (direction === 'sell') {
         newAsks = this.replaceAsks(newAsks, price, amount);
+      } else {
+        newBids = this.replaceBids(newBids, price, amount);
       }
     });
-    let newVol = this.sumUpToPriceLimit(newAsks, this.priceLimit);
     this.setState({
-      volumeUpToLimit: newVol,
-      asks: newAsks
+      volumeUpToLimit: this.sumUpToPriceLimit(newAsks, this.priceLimit),
+      volumeDownToLimit: this.sumDownToPriceLimit(newBids, this.priceLimit),
+      asks: newAsks,
+      bids: newBids
     });
   }
 
@@ -77,7 +111,9 @@ export class Coinbase extends Component {
     let json = JSON.parse(data);
     if (json.type === 'snapshot') {
       console.log('snapshot');
-      this.parseSnapshot(json.asks.map(row => row.map(x => parseFloat(x))));
+      const asks = json.asks.map(row => row.map(x => parseFloat(x)));
+      const bids = json.bids.map(row => row.map(x => parseFloat(x)));
+      this.parseSnapshot(asks, bids);
     }
     if (json.type === 'l2update') {
       console.log('l2update');
@@ -97,7 +133,7 @@ export class Coinbase extends Component {
     )
   }
 
-  reshapeDataForChart = asks => {
+  reshapeAsksForChart = asks => {
     let cumulativeAmount = 0;
     let results = asks.map(row => {
         cumulativeAmount += row[1];
@@ -106,12 +142,46 @@ export class Coinbase extends Component {
     return results.filter(row => row.x < this.priceLimit);
   }
 
+  reshapeBidsForChart = bids => {
+    let cumulativeAmount = 0;
+    let results = bids.map(row => {
+        cumulativeAmount += row[1];
+        return {x: row[0], y: cumulativeAmount};
+    })
+    return results.filter(row => row.x > this.priceLimit);
+  }
+
   hasLoaded() {
     return this.state.volumeUpToLimit !== undefined;
   }
 
+  hasCheapDai() {
+    return this.state.volumeDownToLimit === 0;
+  }
+
   render() {
-    const dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeUpToLimit) : undefined;
+
+    let dollarVolume, title, h3text, data, sign, color, tickValues;
+    if (this.hasLoaded()) {
+      if (this.hasCheapDai()) {
+        dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeUpToLimit) : undefined;
+        title = `${dollarVolume} DAI for sale on Coinbase below $${this.priceLimit}.`;
+        h3text = `for sale on Coinbase below $${this.priceLimit}.`;
+        data = this.reshapeAsksForChart(this.state.asks);
+        sign = '≤';
+        color = '#ff6c4e';
+        tickValues = [this.state.asks[0][0], 1.0];
+      } else {
+        dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeDownToLimit) : undefined;
+        title = `${dollarVolume} DAI in bids on Coinbase above $${this.priceLimit}.`
+        h3text = `in bids on Coinbase above $${this.priceLimit}.`;  
+        data = this.reshapeBidsForChart(this.state.bids);
+        sign = '≥';
+        color = '#12939a';
+        tickValues = [1.0, this.state.bids[0][0]];
+      }
+    }
+    
     return (
       <div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
         
@@ -120,7 +190,7 @@ export class Coinbase extends Component {
           <main role="main" className="inner cover">
           <h1 className="cover-heading">{dollarVolume}</h1>
           <h2>DAI</h2>
-          <h3 className="mb-4">for sale on Coinbase below ${this.priceLimit}.</h3>
+          <h3 className="mb-4">{h3text}</h3>
           <FlexibleWidthXYPlot
             height={300}
             onMouseLeave={() => this.setState({value: undefined})}
@@ -130,7 +200,7 @@ export class Coinbase extends Component {
                 line: {stroke: '#FFF'},
                 text: {stroke: 'none', fill: '#FFF', fontSize: '1em'}
               }}
-              tickValues={[this.state.asks[0][0], 1.0]}
+              tickValues={tickValues}
               tickFormat={v => `$${v}`}
             />
             <YAxis
@@ -138,14 +208,17 @@ export class Coinbase extends Component {
               hideLine
             />
               <AreaSeries
-                data={this.reshapeDataForChart(this.state.asks)}
-                onNearestX={(datapoint, event) => {
+                data={data}
+                color={color}
+                onNearestX={datapoint => {
                   this.setState({value: datapoint});
-              }}
+                }}
               />
               {this.state.value && 
               <Hint value={this.state.value}>
-                <p>{this.formatAsDollars(this.state.value.y) + ' ≤ $' + this.state.value.x}</p>
+                <p>{this.formatAsDollars(this.state.value.y)
+                   + ` ${sign} $` + this.state.value.x}
+                </p>
               </Hint>
               }
           </FlexibleWidthXYPlot>
@@ -155,7 +228,10 @@ export class Coinbase extends Component {
             <p>Made by <a href="https://twitter.com/ASvanevik">@ASvanevik</a></p>
           </div>
           </footer>
-          <TitleComponent title={`${dollarVolume} DAI for sale on Coinbase below $${this.priceLimit}.`} />
+          <TitleComponent
+            title={title}
+          />
+          
         </React.Fragment>
         :
         <BounceLoader
