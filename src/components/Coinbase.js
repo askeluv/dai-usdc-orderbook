@@ -11,7 +11,7 @@ export class Coinbase extends Component {
   constructor(props) {
     super(props);
     this.pair = 'DAI-USDC';
-    this.priceLimit = 1;
+    this.priceLimit = 1.00;
     this.state = {};
     }
 
@@ -164,21 +164,21 @@ export class Coinbase extends Component {
     let dollarVolume, title, h3text, data, sign, color, tickValues;
     if (this.hasLoaded()) {
       if (this.hasCheapDai()) {
-        dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeUpToLimit) : undefined;
+        dollarVolume = this.formatAsDollars(this.state.volumeUpToLimit);
         title = `${dollarVolume} DAI for sale on Coinbase below $${this.priceLimit}.`;
         h3text = `for sale on Coinbase below $${this.priceLimit}.`;
         data = this.reshapeAsksForChart(this.state.asks);
         sign = '≤';
         color = '#ff6c4e';
-        tickValues = [this.state.asks[0][0], 1.0];
+        tickValues = [this.state.asks[0][0], this.priceLimit];
       } else {
-        dollarVolume = this.hasLoaded() ? this.formatAsDollars(this.state.volumeDownToLimit) : undefined;
+        dollarVolume = this.formatAsDollars(this.state.volumeDownToLimit);
         title = `${dollarVolume} DAI in bids on Coinbase above $${this.priceLimit}.`
         h3text = `in bids on Coinbase above $${this.priceLimit}.`;  
         data = this.reshapeBidsForChart(this.state.bids);
         sign = '≥';
         color = '#12939a';
-        tickValues = [1.0, this.state.bids[0][0]];
+        tickValues = [this.priceLimit, this.state.bids[0][0]];
       }
     }
     
@@ -194,6 +194,7 @@ export class Coinbase extends Component {
           <FlexibleWidthXYPlot
             height={300}
             onMouseLeave={() => this.setState({value: undefined})}
+            xDomain={tickValues}
             >
             <XAxis
               style={{
