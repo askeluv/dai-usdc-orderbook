@@ -20,3 +20,7 @@ h1 {
     and something more appropriate for display headings */
   }
 }
+
+.disclaimer {
+  font-size: 0.8em;
+}

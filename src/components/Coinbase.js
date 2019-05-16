@@ -33,7 +33,7 @@ export class Coinbase extends Component {
       result.unshift([price, newAmount]);
       result = result.sort((a, b) => a[0] > b[0] ? 1 : -1);
     }
-    return result;
+    return result.filter(x => {return x[1] !== 0.0});
   }
 
   replaceBids = (bids, price, newAmount) => {
@@ -50,7 +50,7 @@ export class Coinbase extends Component {
       result.unshift([price, newAmount]);
       result = result.sort((a, b) => a[0] < b[0] ? 1 : -1);
     }
-    return result;
+    return result.filter(x => {return x[1] !== 0.0});
   }
 
   sumUpToPriceLimit = (asks, priceLimit) => {
@@ -223,6 +223,9 @@ export class Coinbase extends Component {
               </Hint>
               }
           </FlexibleWidthXYPlot>
+          <p>Bid: ${this.state.bids[0][0]} |
+             Ask: ${this.state.asks[0][0]}
+          </p>
           </main>
           <footer className="mastfoot mt-4">
           <div className="inner">
