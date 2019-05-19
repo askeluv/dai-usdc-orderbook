@@ -173,8 +173,8 @@ export class Coinbase extends Component {
         tickValues = [this.state.asks[0][0], this.priceLimit];
       } else {
         dollarVolume = this.formatAsDollars(this.state.volumeDownToLimit);
-        title = `${dollarVolume} DAI in bids on Coinbase above $${this.priceLimit}.`
-        h3text = `in bids on Coinbase above $${this.priceLimit}.`;  
+        title = `${dollarVolume} DAI you can sell on Coinbase above $${this.priceLimit}.`
+        h3text = `you can sell on Coinbase above $${this.priceLimit}.`;  
         data = this.reshapeBidsForChart(this.state.bids);
         sign = '≥';
         color = '#12939a';
