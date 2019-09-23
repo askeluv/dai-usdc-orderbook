@@ -15,6 +15,41 @@ export class Coinbase extends Component {
     this.state = {};
     }
 
+  componentDidMount = async() => {
+    const supplyRates = await this.getUsdcAndDaiSupplyRates();
+    this.setState({
+        ...this.state,
+        ...supplyRates,
+    });
+  }
+
+  getUsdcAndDaiSupplyRates = async () => {
+    const compoundData = await this.getCompoundData();
+    const rates = compoundData.cToken
+                    .filter((x) => (x.symbol === 'cUSDC' || x.symbol === 'cDAI'))
+                    .map((x) => [x.symbol, parseFloat(x.supply_rate.value)]);
+    const usdcSupplyRate = rates.filter((x) => x[0] === 'cUSDC')[0][1];
+    const daiSupplyRate = rates.filter((x) => x[0] === 'cDAI')[0][1];
+    return { usdcSupplyRate, daiSupplyRate }
+  }
+
+  getCompoundData = async () => {
+    return fetch("https://api.compound.finance/api/v2/ctoken")
+    .then((res) => res.json())
+    .then((data) => {
+        return data;
+    })
+    .catch((error) => {
+        console.log(error);
+    })
+  }
+
+  getSupplyDays() {
+      const daiPrice = this.state.bids[0][0];
+      const rateDifference = this.state.daiSupplyRate - this.state.usdcSupplyRate;
+      return 365 * Math.log(daiPrice) / Math.log(1 + rateDifference);
+  }
+
   formatAsDollars = x => {
     return '$' + x.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
   };
@@ -110,13 +145,11 @@ export class Coinbase extends Component {
   handleData(data) {
     let json = JSON.parse(data);
     if (json.type === 'snapshot') {
-      console.log('snapshot');
       const asks = json.asks.map(row => row.map(x => parseFloat(x)));
       const bids = json.bids.map(row => row.map(x => parseFloat(x)));
       this.parseSnapshot(asks, bids);
     }
     if (json.type === 'l2update') {
-      console.log('l2update');
       this.reportUpdate(json);
     }
   }
@@ -152,7 +185,7 @@ export class Coinbase extends Component {
   }
 
   hasLoaded() {
-    return this.state.volumeUpToLimit !== undefined;
+    return this.state.volumeUpToLimit !== undefined && this.state.daiSupplyRate;
   }
 
   hasCheapDai() {
@@ -161,7 +194,7 @@ export class Coinbase extends Component {
 
   render() {
 
-    let dollarVolume, title, h3text, data, sign, color, tickValues;
+    let dollarVolume, title, h3text, data, sign, color, tickValues, compoundDays;
     if (this.hasLoaded()) {
       if (this.hasCheapDai()) {
         dollarVolume = this.formatAsDollars(this.state.volumeUpToLimit);
@@ -179,6 +212,7 @@ export class Coinbase extends Component {
         sign = '≥';
         color = '#12939a';
         tickValues = [this.priceLimit, this.state.bids[0][0]];
+        compoundDays = Math.round(this.getSupplyDays());
       }
     }
     
@@ -226,6 +260,7 @@ export class Coinbase extends Component {
           <p>Bid: ${this.state.bids[0][0]} |
              Ask: ${this.state.asks[0][0]}
           </p>
+          <p>Premium = ~{compoundDays} days worth of Compound lending</p>
           </main>
           <footer className="mastfoot mt-4">
           <div className="inner">
