@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import Floater from 'react-floater';
 import Websocket from 'react-websocket';
 import { BounceLoader } from 'react-spinners';
 import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries, Hint} from 'react-vis';
@@ -14,6 +15,41 @@ export class Coinbase extends Component {
     this.priceLimit = 1.00;
     this.state = {};
     }
+
+  componentDidMount = async() => {
+    const supplyRates = await this.getUsdcAndDaiSupplyRates();
+    this.setState({
+        ...this.state,
+        ...supplyRates,
+    });
+  }
+
+  getUsdcAndDaiSupplyRates = async () => {
+    const compoundData = await this.getCompoundData();
+    const rates = compoundData.cToken
+                    .filter((x) => (x.symbol === 'cUSDC' || x.symbol === 'cDAI'))
+                    .map((x) => [x.symbol, parseFloat(x.supply_rate.value)]);
+    const usdcSupplyRate = rates.filter((x) => x[0] === 'cUSDC')[0][1];
+    const daiSupplyRate = rates.filter((x) => x[0] === 'cDAI')[0][1];
+    return { usdcSupplyRate, daiSupplyRate }
+  }
+
+  getCompoundData = async () => {
+    return fetch("https://api.compound.finance/api/v2/ctoken")
+    .then((res) => res.json())
+    .then((data) => {
+        return data;
+    })
+    .catch((error) => {
+        console.log(error);
+    })
+  }
+
+  getSupplyDays() {
+      const daiPrice = this.state.bids[0][0];
+      const rateDifference = this.state.daiSupplyRate - this.state.usdcSupplyRate;
+      return 365 * Math.log(daiPrice) / Math.log(1 + rateDifference);
+  }
 
   formatAsDollars = x => {
     return '$' + x.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
@@ -110,13 +146,11 @@ export class Coinbase extends Component {
   handleData(data) {
     let json = JSON.parse(data);
     if (json.type === 'snapshot') {
-      console.log('snapshot');
       const asks = json.asks.map(row => row.map(x => parseFloat(x)));
       const bids = json.bids.map(row => row.map(x => parseFloat(x)));
       this.parseSnapshot(asks, bids);
     }
     if (json.type === 'l2update') {
-      console.log('l2update');
       this.reportUpdate(json);
     }
   }
@@ -152,7 +186,7 @@ export class Coinbase extends Component {
   }
 
   hasLoaded() {
-    return this.state.volumeUpToLimit !== undefined;
+    return this.state.volumeUpToLimit !== undefined && this.state.daiSupplyRate;
   }
 
   hasCheapDai() {
@@ -161,7 +195,7 @@ export class Coinbase extends Component {
 
   render() {
 
-    let dollarVolume, title, h3text, data, sign, color, tickValues;
+    let dollarVolume, title, h3text, data, sign, color, tickValues, compoundDays;
     if (this.hasLoaded()) {
       if (this.hasCheapDai()) {
         dollarVolume = this.formatAsDollars(this.state.volumeUpToLimit);
@@ -179,6 +213,7 @@ export class Coinbase extends Component {
         sign = '≥';
         color = '#12939a';
         tickValues = [this.priceLimit, this.state.bids[0][0]];
+        compoundDays = Math.round(this.getSupplyDays());
       }
     }
     
@@ -226,6 +261,16 @@ export class Coinbase extends Component {
           <p>Bid: ${this.state.bids[0][0]} |
              Ask: ${this.state.asks[0][0]}
           </p>
+          {!this.hasCheapDai() && 
+            <Floater
+              content={`How long would it take to earn this premium by supplying your Dai to Compound? \n\nAssumptions:\n 1) Dai returns to $1 peg\n 2) Compound rates stay the same\n 3) Alternative is to lend your USDC on Compound`}
+              event="hover"
+              placement="top"
+              styles={{wrapper: {cursor: 'auto'}, content: {textAlign: 'left'}, floater: {maxWidth: 400}}}
+              >
+              <p>Premium = ~{compoundDays} days worth of Compound lending</p>
+            </Floater>
+          }
           </main>
           <footer className="mastfoot mt-4">
           <div className="inner">
