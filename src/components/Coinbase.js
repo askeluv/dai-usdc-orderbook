@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import Floater from 'react-floater';
 import Websocket from 'react-websocket';
 import { BounceLoader } from 'react-spinners';
 import {FlexibleWidthXYPlot, XAxis, YAxis, AreaSeries, Hint} from 'react-vis';
@@ -260,7 +261,16 @@ export class Coinbase extends Component {
           <p>Bid: ${this.state.bids[0][0]} |
              Ask: ${this.state.asks[0][0]}
           </p>
-          <p>Premium = ~{compoundDays} days worth of Compound lending</p>
+          {!this.hasCheapDai() && 
+            <Floater
+              content={`How long would it take to earn this premium by supplying your Dai to Compound? \n\nAssumptions:\n 1) Dai returns to $1 peg\n 2) Compound rates stay the same\n 3) Alternative is to lend your USDC on Compound`}
+              event="hover"
+              placement="top"
+              styles={{wrapper: {cursor: 'auto'}, content: {textAlign: 'left'}}}
+              >
+              <p>Premium = ~{compoundDays} days worth of Compound lending</p>
+            </Floater>
+          }
           </main>
           <footer className="mastfoot mt-4">
           <div className="inner">
