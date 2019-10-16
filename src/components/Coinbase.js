@@ -266,7 +266,7 @@ export class Coinbase extends Component {
               content={`How long would it take to earn this premium by supplying your Dai to Compound? \n\nAssumptions:\n 1) Dai returns to $1 peg\n 2) Compound rates stay the same\n 3) Alternative is to lend your USDC on Compound`}
               event="hover"
               placement="top"
-              styles={{wrapper: {cursor: 'auto'}, content: {textAlign: 'left'}}}
+              styles={{wrapper: {cursor: 'auto'}, content: {textAlign: 'left'}, floater: {maxWidth: 400}}}
               >
               <p>Premium = ~{compoundDays} days worth of Compound lending</p>
             </Floater>
